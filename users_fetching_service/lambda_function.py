@@ -47,6 +47,8 @@ def lambda_handler(event, context):
       if u['identities'][0]['connection']=='Strava':
         # Build a simplified representation of the user
         user = {
+          # Simplify Auth0's representation of Strava user id, retrieving the
+          # real user id provided initially by Strava
           'id': int(u['identities'][0]['user_id'].replace('Strava|', '')),
           'first_name': u['firstname'],
           'last_name': u['lastname'],
