@@ -1,24 +1,44 @@
 import json
-from operator import itemgetter
 
+# TODO: include full user data to feed leaderboard
+# TODO: include geodesic distances calculations
+# TODO: include 'furthest_distance' to metrics
 
-def select_activity_type(activities, activity_type):
-  filtered_list = list(filter(lambda d: d['type'] in [activity_type], activities))
-  return filtered_list
+def aggregated_metrics_per_user(activities):
+	aggregated_metrics = {}
+	for activity in activities:
+		# user_id = activity['user_id']
+		user_id = activity['athlete']['id']
+		if user_id in aggregated_metrics:
+			aggregated_metrics[user_id]['total_distance'] += activity['distance']
+			aggregated_metrics[user_id]['total_elevation_gain'] += activity['total_elevation_gain']
+			aggregated_metrics[user_id]['total_moving_time'] += activity['moving_time']
 
-def max_distance_activity(activities):
-  ancestor = max(runs, key=itemgetter('distance'))
-  return ancestor
+			if activity['elev_high'] > aggregated_metrics[user_id]['max_elevation']:
+				aggregated_metrics[user_id]['max_elevation'] = activity['elev_high']
 
-def meters_to_kilometers(distance):
-  kilometers = round(distance/1000, 2)
-  return kilometers
+			if activity['elev_low'] < aggregated_metrics[user_id]['min_elevation']:
+				aggregated_metrics[user_id]['min_elevation'] = activity['elev_low']
+			
+		else:
+			aggregated_metrics[user_id] = {
+				'user': user_id, 
+				'total_distance': activity['distance'],
+				'total_elevation_gain': activity['total_elevation_gain'],
+				'total_moving_time': activity['moving_time'],
+				'max_elevation': activity['elev_high'],
+				'min_elevation': activity['elev_low']
+			}
+	return [ m for m in aggregated_metrics.values() ]
 
+def metric_leaderboard(aggregated_metrics_per_user, metric):
+	if metric == 'min_elevation':
+		reversed = False
+	else:
+		reversed = True
+	return sorted(aggregated_metrics_per_user, key=lambda k: k[metric], reverse=reversed) 
 
 activities = json.load(open('sample_activities.json'))
-runs       = select_activity_type(activities, 'Run')
+aggregated_metrics = aggregated_metrics_per_user(activities)
 
-winning_activity = max_distance_activity(runs)
-distance = meters_to_kilometers(winning_activity['distance'])
-
-print( winning_activity ['name'] + ': ' + str(distance) + 'KM' )
+print json.dumps(metric_leaderboard(aggregated_metrics, 'min_elevation'))

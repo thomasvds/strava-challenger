@@ -59,6 +59,7 @@ def lambda_handler(event, context):
 
             'user_id': u['id'],
             'user_details': json.dumps({
+              'id': u['id'],
               'first_name': u['first_name'],
               'last_name': u['last_name'],
               'email': u['email'],
